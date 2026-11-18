@@ -54,7 +54,7 @@ const CONFIG_STORE_LOG_INTERVAL: Duration = Duration::from_secs(30);
 
 #[cfg(target_os = "macos")]
 lazy_static::lazy_static! {
-    pub static ref ORG: RwLock<String> = RwLock::new("com.carriez".to_owned());
+    pub static ref ORG: RwLock<String> = RwLock::new("com.benok".to_owned());
 }
 
 type Size = (i32, i32, i32, i32);
@@ -68,18 +68,34 @@ lazy_static::lazy_static! {
     static ref ONLINE: Mutex<HashMap<String, i64>> = Default::default();
     pub static ref PROD_RENDEZVOUS_SERVER: RwLock<String> = RwLock::new("".to_owned());
     pub static ref EXE_RENDEZVOUS_SERVER: RwLock<String> = Default::default();
-    pub static ref APP_NAME: RwLock<String> = RwLock::new("RustDesk".to_owned());
+    // Benok Reach: internal name (no space - it is used unquoted in Windows service / taskkill commands).
+    // The UI shows "Benok Reach" (flutter/lib/common.dart appName).
+    pub static ref APP_NAME: RwLock<String> = RwLock::new("BenokReach".to_owned());
     static ref KEY_PAIR: Mutex<Option<KeyPair>> = Default::default();
     static ref USER_DEFAULT_CONFIG: RwLock<(UserDefaultConfig, Instant)> = RwLock::new((UserDefaultConfig::load(), Instant::now()));
     pub static ref NEW_STORED_PEER_CONFIG: Mutex<HashSet<String>> = Default::default();
     pub static ref DEFAULT_SETTINGS: RwLock<HashMap<String, String>> = Default::default();
-    pub static ref OVERWRITE_SETTINGS: RwLock<HashMap<String, String>> = Default::default();
+    // Benok Reach: server settings are locked to the Benok server (cannot be changed by users or --import-config).
+    pub static ref OVERWRITE_SETTINGS: RwLock<HashMap<String, String>> = RwLock::new(HashMap::from([
+        ("custom-rendezvous-server".to_owned(), BENOK_SERVER.to_owned()),
+        ("key".to_owned(), BENOK_KEY.to_owned()),
+        ("relay-server".to_owned(), "".to_owned()),
+        ("api-server".to_owned(), "".to_owned()),
+    ]));
     pub static ref DEFAULT_DISPLAY_SETTINGS: RwLock<HashMap<String, String>> = Default::default();
     pub static ref OVERWRITE_DISPLAY_SETTINGS: RwLock<HashMap<String, String>> = Default::default();
     pub static ref DEFAULT_LOCAL_SETTINGS: RwLock<HashMap<String, String>> = Default::default();
     pub static ref OVERWRITE_LOCAL_SETTINGS: RwLock<HashMap<String, String>> = Default::default();
-    pub static ref HARD_SETTINGS: RwLock<HashMap<String, String>> = Default::default();
-    pub static ref BUILTIN_SETTINGS: RwLock<HashMap<String, String>> = Default::default();
+    // Benok Reach: no RustDesk account sign-in (there is no account server).
+    pub static ref HARD_SETTINGS: RwLock<HashMap<String, String>> = RwLock::new(HashMap::from([
+        ("disable-account".to_owned(), "Y".to_owned()),
+    ]));
+    // Benok Reach: hide the ID/relay server and WebSocket settings; never register with admin.rustdesk.com.
+    pub static ref BUILTIN_SETTINGS: RwLock<HashMap<String, String>> = RwLock::new(HashMap::from([
+        ("hide-server-settings".to_owned(), "Y".to_owned()),
+        ("hide-websocket-settings".to_owned(), "Y".to_owned()),
+        ("register-device".to_owned(), "N".to_owned()),
+    ]));
 }
 
 #[cfg(target_os = "android")]
@@ -113,8 +129,11 @@ const CHARS: &[char] = &[
     'm', 'n', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
 ];
 
-pub const RENDEZVOUS_SERVERS: &[&str] = &["rs-ny.rustdesk.com"];
-pub const RS_PUB_KEY: &str = "OeVuKk5nlHiXp+APNn0Y3pC1Iwpwn44JGqrQCsWqmBw=";
+// Benok Reach: built-in Benok server (remote.benokitconsult.com, self-hosted RustDesk server) and its public key.
+pub const BENOK_SERVER: &str = "remote.benokitconsult.com";
+pub const BENOK_KEY: &str = "HnUH2N0yZv39gE2BliXNurLJvSkm8u7E5d6tfIhF2Ew=";
+pub const RENDEZVOUS_SERVERS: &[&str] = &[BENOK_SERVER];
+pub const RS_PUB_KEY: &str = BENOK_KEY;
 
 pub const RENDEZVOUS_PORT: i32 = 21116;
 pub const RELAY_PORT: i32 = 21117;
